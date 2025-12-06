@@ -7,6 +7,10 @@
 
 const int WIDTH=1000;
 const int HIGHT=750;
+Uint8 *buf=NULL;
+Uint32 audio_len;
+Uint32 pos=0;
+SDL_AudioDeviceID id;
 
 typedef struct color{
     int r;
@@ -17,8 +21,11 @@ typedef struct color{
 
 //初始化和创建窗口
 SDL_Window* init_creat(){
-    if(SDL_Init(SDL_INIT_VIDEO)!=0){
+    if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO)!=0){
         SDL_Log("INIT UI FAILED:%s",SDL_GetError());
+    }
+    if(TTF_Init()<0){
+        SDL_Log("INIT TTF FAILED:%s",TTF_GetError());
     }
     SDL_Window *win=SDL_CreateWindow("game",
                                     SDL_WINDOWPOS_CENTERED,//x轴居中
@@ -32,6 +39,23 @@ SDL_Window* init_creat(){
     }
     return win;
 }
+
+//打开字体
+TTF_Font *open_font(char *font_position,int size){
+    TTF_Font *font=TTF_OpenFont(font_position,size);
+    if(font==NULL){
+        SDL_Log("%s",TTF_GetError());
+    }
+    return font;
+}
+
+//渲染文字
+// void print(TTF_Font *font,char word,color *col){
+//     SDL_Surface *wo=TTF_RenderText_Solid(font,word,{col->r,col->g,col->b});
+//     SDL_Suface
+//     SDL_FreeSurface(wo);
+// }
+
 
 //创建渲染器
 SDL_Renderer *create_renderer(SDL_Window *win){
@@ -79,6 +103,37 @@ SDL_Renderer *draw_rectangle(SDL_Renderer *ren,SDL_Rect *rect,color *col){
     SDL_RenderFillRect(ren,rect);
 }
 
+//回调
+void callback(void *userdata,Uint8 *stream,int len){
+    int remain=audio_len-pos;
+    if(remain>len){
+        SDL_memcpy(stream,buf+pos,len);
+        pos+=len;
+    }else{
+        SDL_memcpy(stream,buf+pos,remain);
+        pos=0;
+    }
+}
+
+//播放背景音乐
+void back_music(int id){
+    SDL_AudioSpec spec;
+    if(SDL_LoadWAV("./sourse/music/money.wav",&spec,&buf,&audio_len)==NULL){
+        SDL_Log("LOAD MUSIC FAILED:%s",SDL_GetError());
+    }
+    spec.callback=callback;
+    id=SDL_OpenAudioDevice(NULL,//默认设备
+                        0,      //播放
+                        &spec,
+                        NULL,
+                        0
+                    );
+    if(id==0){
+        SDL_Log("OPEN AUDIO FAILED:%s",SDL_GetError());
+    }
+    SDL_PauseAudioDevice(id,0);
+}
+
 //使矩形沿x轴移动（需搭配循环使用）
 void move_rect(SDL_Renderer *ren,SDL_Rect *rect,color *col,int speed){
     draw_rectangle(ren,rect,col);
@@ -89,8 +144,11 @@ void move_rect(SDL_Renderer *ren,SDL_Rect *rect,color *col,int speed){
 
 //退出
 void quit(SDL_Window *win,SDL_Renderer *ren){
-    SDL_DestroyWindow(win);
     SDL_DestroyRenderer(ren);
+    SDL_CloseAudioDevice(id);
+    SDL_FreeWAV(buf);
+    SDL_DestroyRenderer(ren);
+    SDL_DestroyWindow(win);
     IMG_Quit();
     SDL_Quit();
 }
@@ -107,29 +165,54 @@ void action(char *position,SDL_Rect *rect,color *col,int speed){
     SDL_Surface *ima=load_image(position);
     SDL_Event event;
     into_image(win,ren,ima);
-    draw_rectangle(ren,&rect[0],&col[0]);
     draw_ui(ren);
+    back_music(id);
     bool run=true;
     while(run){
         while(SDL_PollEvent(&event)!=0){
             switch(event.type){
-                case SDL_QUIT://退出事件
+                case SDL_QUIT:                            //退出事件
                     run=false;
                     break;
-                case SDL_WINDOWEVENT://窗口事件
+                case SDL_WINDOWEVENT:                     //窗口事件
                     switch(event.window.event){
-                        case SDL_WINDOWEVENT_SIZE_CHANGED://窗口大小变化
+                        case SDL_WINDOWEVENT_SIZE_CHANGED://窗口大小变化事件
                             //窗口大小变化后，原有纹理失效
-                            SDL_Log("changed");
                             ima=load_image(position);
                             into_image(win,ren,ima);
-                            draw_rectangle(ren,&rect[0],&col[0]);
                             draw_ui(ren);
                             break;
                     }break;
+                case SDL_MOUSEMOTION:                     //鼠标移动事件
+                    //矩形跟随鼠标
+                    rect[0].x=event.motion.x-5;
+                    rect[0].y=event.motion.y-5;
+                    ima=load_image(position);
+                    into_image(win,ren,ima);
+                    draw_rectangle(ren,&rect[0],&col[0]);
+                    draw_ui(ren);
+                    break;
+                case SDL_MOUSEBUTTONDOWN:                 //鼠标按下事件
+                    draw_rectangle(ren,&rect[0],&col[4]);
+                    draw_ui(ren);
+                    break;
+                case SDL_MOUSEBUTTONUP:                   //鼠标抬起事件
+                    draw_rectangle(ren,&rect[0],&col[0]);
+                    draw_ui(ren);
+                    break;
+                case SDL_KEYDOWN:                         //按键按下事件
+                    switch(event.key.keysym.sym){
+                        //按esc退出
+                        case SDLK_ESCAPE:                 //按下esc
+                            goto QUIT;
+                            break;
+                    }
+                    break;
+                case SDL_KEYUP:                           //案件抬起事件
+                    break;
             }
         }
     }
     //quit必须放在事件循环外
-    quit(win,ren);
+    QUIT: quit(win,ren);
 }
