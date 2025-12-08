@@ -1,7 +1,6 @@
 #include<SDL2/SDL.h>
 #include<SDL2/SDL_ttf.h>
 #include<SDL2/SDL_image.h>
-#include<SDL2/SDL_surface.h>
 #include<stdbool.h>
 #include<stdio.h>
 
@@ -44,17 +43,22 @@ SDL_Window* init_creat(){
 TTF_Font *open_font(char *font_position,int size){
     TTF_Font *font=TTF_OpenFont(font_position,size);
     if(font==NULL){
-        SDL_Log("%s",TTF_GetError());
+        SDL_Log("OPEN TTF FAILED:%s",TTF_GetError());
     }
     return font;
 }
 
 //渲染文字
-// void print(TTF_Font *font,char word,color *col){
-//     SDL_Surface *wo=TTF_RenderText_Solid(font,word,{col->r,col->g,col->b});
-//     SDL_Suface
-//     SDL_FreeSurface(wo);
-// }
+void print(TTF_Font *font,char *word,color *col,SDL_Renderer *ren,SDL_Rect *rect){
+    SDL_Color co={col->r,col->g,col->b,col->a};
+    SDL_Surface *wo=TTF_RenderUTF8_Blended(font,word,co);
+    SDL_Texture* text=SDL_CreateTextureFromSurface(ren,wo);
+    if(wo==NULL||text==NULL){
+        SDL_Log("LODA WORD FAILED:%s",TTF_GetError());
+    }
+    SDL_FreeSurface(wo);
+    SDL_RenderCopy(ren,text,NULL,rect);
+}
 
 
 //创建渲染器

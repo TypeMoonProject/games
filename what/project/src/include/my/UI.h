@@ -32,6 +32,8 @@ color col[]={{0  ,0  ,0  ,255},//黑
 int speed=10;
 
 SDL_Window* init_creat();
+TTF_Font *open_font(char *font_position,int size);
+void print(TTF_Font *font,char *word,color *col,SDL_Renderer *ren,SDL_Rect *rect);
 SDL_Renderer *create_renderer(SDL_Window *win);
 SDL_Surface *load_image(char *position);
 SDL_Renderer *draw_rectangle(SDL_Renderer *ren,SDL_Rect *rect,color *col);
