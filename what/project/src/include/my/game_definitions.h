@@ -157,4 +157,4 @@ typedef struct {
 // @return 生成的随机整数
 int getRandomInt(int min, int max);
 
-#endif // GAME_DEFINITIONS_H
+#endif

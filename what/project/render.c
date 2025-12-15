@@ -1,18 +1,54 @@
 #include "src/include/my/render.h"
 #include <stdio.h>
 
+// 绘制带悬停效果的矩形
+static void drawHoverRect(SDL_Renderer* renderer, int x, int y, int width, int height, SDL_Color normalColor, SDL_Color hoverColor, bool hover) {
+    if (hover) {
+        SDL_SetRenderDrawColor(renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+    } else {
+        SDL_SetRenderDrawColor(renderer, normalColor.r, normalColor.g, normalColor.b, normalColor.a);
+    }
+    SDL_Rect rect = {x, y, width, height};
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+// 绘制矩形边框
+static void drawBorder(SDL_Renderer* renderer, int x, int y, int width, int height, SDL_Color color, int borderWidth) {
+    for (int i = 0; i < borderWidth; i++) {
+        SDL_Rect borderRect = {x - i, y - i, width + 2 * i, height + 2 * i};
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+        SDL_RenderDrawRect(renderer, &borderRect);
+    }
+}
+
+// 渲染库存项
+static void renderInventoryItem(SDL_Renderer* renderer, TTF_Font* font, const char* name, int amount, int maxAmount, int x, int y) {
+    char inventoryText[100];
+    sprintf(inventoryText, "%s: %d/%d", name, amount, maxAmount);
+    renderText(renderer, font, inventoryText, x, y, (SDL_Color){0, 0, 0, 255});
+}
+
+// 渲染进度条
+static void renderProgressBar(SDL_Renderer* renderer, int x, int y, int width, int height, int progress) {
+    // 进度条背景
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    SDL_Rect bgRect = {x, y, width, height};
+    SDL_RenderFillRect(renderer, &bgRect);
+    
+    // 进度条填充
+    SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
+    SDL_Rect fillRect = {x, y, width * progress / 100, height};
+    SDL_RenderFillRect(renderer, &fillRect);
+}
+
 // 绘制原材料和食物的函数
 void drawBread(SDL_Renderer* renderer, int x, int y, bool hover) {
-    // 绘制面饼（黄色圆形）
-    SDL_SetRenderDrawColor(renderer, 255, 220, 100, 255);
-    if (hover) {
-        SDL_SetRenderDrawColor(renderer, 255, 240, 150, 255);
+    SDL_SetRenderDrawColor(renderer,255,220,100,255);
+    if(hover){
+        SDL_SetRenderDrawColor(renderer,255,240,150,255);
     }
-    // 使用矩形模拟圆形，放大尺寸
     SDL_Rect breadRect = {x, y, 60, 30};
     SDL_RenderFillRect(renderer, &breadRect);
-    
-    // 添加纹理
     SDL_SetRenderDrawColor(renderer, 200, 150, 50, 255);
     for (int i = 0; i < 7; i++) {
         SDL_RenderDrawLine(renderer, x + 5 + i * 8, y + 2, x + 5 + i * 8, y + 28);
@@ -20,7 +56,6 @@ void drawBread(SDL_Renderer* renderer, int x, int y, bool hover) {
 }
 
 void drawMeat(SDL_Renderer* renderer, int x, int y, bool hover) {
-    // 绘制肉（红色矩形）
     SDL_SetRenderDrawColor(renderer, 180, 50, 50, 255);
     if (hover) {
         SDL_SetRenderDrawColor(renderer, 200, 70, 70, 255);
@@ -28,7 +63,6 @@ void drawMeat(SDL_Renderer* renderer, int x, int y, bool hover) {
     SDL_Rect meatRect = {x + 10, y + 5, 40, 20};
     SDL_RenderFillRect(renderer, &meatRect);
     
-    // 添加纹理
     SDL_SetRenderDrawColor(renderer, 150, 30, 30, 255);
     for (int i = 0; i < 5; i++) {
         SDL_RenderDrawLine(renderer, x + 14 + i * 8, y + 8, x + 14 + i * 8, y + 22);
@@ -36,36 +70,27 @@ void drawMeat(SDL_Renderer* renderer, int x, int y, bool hover) {
 }
 
 void drawCucumber(SDL_Renderer* renderer, int x, int y, bool hover) {
-    // 绘制黄瓜（绿色矩形）
     SDL_SetRenderDrawColor(renderer, 100, 200, 100, 255);
     if (hover) {
         SDL_SetRenderDrawColor(renderer, 120, 220, 120, 255);
     }
     SDL_Rect cucumberRect = {x + 10, y + 10, 40, 12};
     SDL_RenderFillRect(renderer, &cucumberRect);
-    
-    // 添加纹理
     SDL_SetRenderDrawColor(renderer, 70, 150, 70, 255);
     SDL_RenderDrawLine(renderer, x + 10, y + 12, x + 50, y + 12);
     SDL_RenderDrawLine(renderer, x + 10, y + 16, x + 50, y + 16);
 }
 
 void drawSauce(SDL_Renderer* renderer, int x, int y, bool hover) {
-    // 绘制沙司（橙色三角形）
     SDL_SetRenderDrawColor(renderer, 255, 150, 50, 255);
     if (hover) {
         SDL_SetRenderDrawColor(renderer, 255, 180, 80, 255);
     }
     
-    SDL_Point saucePoints[4] = {
-        {x + 30, y + 2},
-        {x + 60, y + 28},
-        {x, y + 28},
-        {x + 30, y + 2}
+    SDL_Point saucePoints[4] = {{x + 30, y + 2},{x + 60, y + 28},{x, y + 28},{x + 30, y + 2}
     };
     SDL_RenderDrawLines(renderer, saucePoints, 4);
     
-    // 使用SDL_RenderDrawLines模拟填充多边形
     for (int i = y + 3; i < y + 28; i++) {
         int left = x + (i - (y + 2)) * (30) / 26;
         int right = x + 60 - (i - (y + 2)) * (30) / 26;
@@ -74,13 +99,11 @@ void drawSauce(SDL_Renderer* renderer, int x, int y, bool hover) {
 }
 
 void drawFries(SDL_Renderer* renderer, int x, int y, bool hover) {
-    // 绘制薯条（黄色小矩形）
     SDL_SetRenderDrawColor(renderer, 255, 220, 80, 255);
     if (hover) {
         SDL_SetRenderDrawColor(renderer, 255, 240, 120, 255);
     }
     
-    // 绘制多根薯条
     for (int i = 0; i < 6; i++) {
         SDL_Rect fryRect = {x + 12 + i * 8, y + 8, 6, 18};
         SDL_RenderFillRect(renderer, &fryRect);
@@ -88,13 +111,10 @@ void drawFries(SDL_Renderer* renderer, int x, int y, bool hover) {
 }
 
 void drawKetchup(SDL_Renderer* renderer, int x, int y, bool hover) {
-    // 绘制番茄酱（红色瓶子）
     SDL_SetRenderDrawColor(renderer, 200, 50, 50, 255);
     if (hover) {
         SDL_SetRenderDrawColor(renderer, 220, 70, 70, 255);
     }
-    
-    // 瓶子身体
     SDL_Rect bottleBody = {x + 15, y + 8, 30, 22};
     SDL_RenderFillRect(renderer, &bottleBody);
     
@@ -161,7 +181,7 @@ void drawCoke(SDL_Renderer* renderer, int x, int y, bool hover) {
         SDL_SetRenderDrawColor(renderer, 100, 40, 40, 255);
     }
     
-    // 可乐液体（在杯子内部，稍微小一点）
+    // 可乐液体（在杯子内部）
     SDL_Rect cokeLiquid = {x + 18, y + 13, 24, 14};
     SDL_RenderFillRect(renderer, &cokeLiquid);
     
@@ -204,8 +224,7 @@ void drawDeliverIcon(SDL_Renderer* renderer, int x, int y, bool hover) {
     };
     SDL_RenderDrawLines(renderer, arrowPoints, 4);
     
-    // 使用SDL_RenderDrawLines模拟填充多边形
-    for (int i = y + 6; i < y + 15; i++) {
+    for(int i = y + 6; i < y + 15; i++) {
         int right = x + 30 - (i - (y + 5)) * 20 / 10;
         SDL_RenderDrawLine(renderer, x + 10, i, right, i);
     }
@@ -214,10 +233,9 @@ void drawDeliverIcon(SDL_Renderer* renderer, int x, int y, bool hover) {
 void drawRestockIcon(SDL_Renderer* renderer, int x, int y, bool hover) {
     // 绘制补货图标（蓝色箱子）
     SDL_SetRenderDrawColor(renderer, 50, 50, 180, 255);
-    if (hover) {
+    if(hover) {
         SDL_SetRenderDrawColor(renderer, 70, 70, 200, 70);
     }
-    
     // 箱子身体
     SDL_Rect boxBody = {x + 8, y + 5, 24, 14};
     SDL_RenderFillRect(renderer, &boxBody);
@@ -234,18 +252,15 @@ void drawRestockIcon(SDL_Renderer* renderer, int x, int y, bool hover) {
 
 
 void renderText(SDL_Renderer* renderer, TTF_Font* font, const char* text, int x, int y, SDL_Color color) {
-    // 检查文本是否为空或长度为0
     if (text == NULL || text[0] == '\0') {
-        return; // 不渲染空文本
+        return; 
     }
-    
     // 创建文本表面
     SDL_Surface* surface = TTF_RenderUTF8_Solid(font, text, color);
     if (surface == NULL) {
         fprintf(stderr, "Failed to create text surface: %s\n", TTF_GetError());
         return;
     }
-    
     // 从表面创建纹理
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (texture == NULL) {
@@ -253,17 +268,13 @@ void renderText(SDL_Renderer* renderer, TTF_Font* font, const char* text, int x,
         SDL_FreeSurface(surface);
         return;
     }
-    
-    // 获取文本尺寸并释放表面
+    // 获取文本尺寸
     int textWidth = surface->w;
     int textHeight = surface->h;
     SDL_FreeSurface(surface);
-    
-    // 渲染文本
+
     SDL_Rect dstRect = {x, y, textWidth, textHeight};
     SDL_RenderCopy(renderer, texture, NULL, &dstRect);
-    
-    // 释放纹理
     SDL_DestroyTexture(texture);
 }
 
@@ -277,22 +288,18 @@ bool renderButton(SDL_Renderer* renderer, TTF_Font* font, const char* text, int 
         buttonColor = (SDL_Color){150, 150, 150, 255};
     }
     SDL_Color textColor = (SDL_Color){255, 255, 255, 255};
-    
     // 绘制按钮背景
     SDL_Rect rect = {x, y, width, height};
     SDL_SetRenderDrawColor(renderer, buttonColor.r, buttonColor.g, buttonColor.b, buttonColor.a);
     SDL_RenderFillRect(renderer, &rect);
-    
     // 计算文本居中位置
     SDL_Surface* surface = TTF_RenderUTF8_Solid(font, text, textColor);
     if (surface == NULL) {
         fprintf(stderr, "Failed to create button text surface: %s\n", TTF_GetError());
         return false;
     }
-    
     int textX = x + (width - surface->w) / 2;
     int textY = y + (height - surface->h) / 2;
-    
     // 创建并渲染文本纹理
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (texture == NULL) {
@@ -300,14 +307,11 @@ bool renderButton(SDL_Renderer* renderer, TTF_Font* font, const char* text, int 
         SDL_FreeSurface(surface);
         return false;
     }
-    
     SDL_Rect textRect = {textX, textY, surface->w, surface->h};
     SDL_RenderCopy(renderer, texture, NULL, &textRect);
-    
     // 释放资源
     SDL_FreeSurface(surface);
     SDL_DestroyTexture(texture);
-    
     return true;
 }
 
@@ -315,25 +319,20 @@ void renderMenu(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     // 设置温暖的背景色
     SDL_SetRenderDrawColor(renderer, 100, 60, 30, 255);
     SDL_RenderClear(renderer);
-    
-    // 渲染装饰性背景
+    // 渲染背景
     SDL_SetRenderDrawColor(renderer, 150, 100, 50, 255);
     SDL_Rect bgRect = {100, 100, 800, 550};
     SDL_RenderFillRect(renderer, &bgRect);
-    
     // 渲染标题边框
     SDL_SetRenderDrawColor(renderer, 200, 150, 100, 255);
     SDL_Rect titleRect = {250, 80, 500, 100};
     SDL_RenderFillRect(renderer, &titleRect);
-    
     // 渲染标题
     renderText(renderer, font, "沙威玛传奇", 350, 100, (SDL_Color){255, 255, 255, 255});
-    
     // 渲染统计信息区域
     SDL_SetRenderDrawColor(renderer, 200, 150, 100, 255);
     SDL_Rect statsRect = {400, 200, 200, 80};
     SDL_RenderFillRect(renderer, &statsRect);
-    
     // 渲染统计信息
     char dayText[50];
     char goldText[50];
@@ -341,54 +340,43 @@ void renderMenu(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     sprintf(goldText, "金币: %d", gameData->gold);
     renderText(renderer, font, dayText, 420, 220, (SDL_Color){255, 255, 255, 255});
     renderText(renderer, font, goldText, 420, 250, (SDL_Color){255, 255, 255, 255});
-    
     // 渲染按钮
     bool startButtonHover = mouseX >= 350 && mouseX <= 650 && mouseY >= 320 && mouseY <= 370;
-    
     renderButton(renderer, font, "开始新的一天", 350, 320, 300, 50, startButtonHover);
-    
     // 渲染厨师形象在菜单上
     int chefX = 150;
     int chefY = 350;
-    
     // 厨师身体
     SDL_SetRenderDrawColor(renderer, 200, 100, 50, 255);
     SDL_Rect chefBody = {chefX - 30, chefY, 60, 80};
     SDL_RenderFillRect(renderer, &chefBody);
-    
     // 厨师头部
     SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
     SDL_Rect chefHead = {chefX - 20, chefY - 40, 40, 40};
     SDL_RenderFillRect(renderer, &chefHead);
-    
     // 厨师帽子
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect chefHat1 = {chefX - 25, chefY - 50, 50, 15};
     SDL_RenderFillRect(renderer, &chefHat1);
     SDL_Rect chefHat2 = {chefX - 15, chefY - 60, 30, 20};
     SDL_RenderFillRect(renderer, &chefHat2);
-    
     // 厨师手臂
     SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
     SDL_Rect chefLeftArm = {chefX - 50, chefY + 10, 20, 50};
     SDL_RenderFillRect(renderer, &chefLeftArm);
     SDL_Rect chefRightArm = {chefX + 30, chefY + 10, 20, 50};
     SDL_RenderFillRect(renderer, &chefRightArm);
-    
     // 渲染顾客形象在菜单上
     int customerX = 800;
     int customerY = 350;
-    
     // 顾客身体
     SDL_SetRenderDrawColor(renderer, 50, 100, 150, 255);
     SDL_Rect customerBody = {customerX - 30, customerY, 60, 80};
     SDL_RenderFillRect(renderer, &customerBody);
-    
     // 顾客头部
     SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
     SDL_Rect customerHead = {customerX - 20, customerY - 40, 40, 40};
     SDL_RenderFillRect(renderer, &customerHead);
-    
     // 顾客手臂
     SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
     SDL_Rect customerLeftArm = {customerX - 50, customerY + 10, 20, 50};
@@ -397,6 +385,34 @@ void renderMenu(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     SDL_RenderFillRect(renderer, &customerRightArm);
 }
 
+//绘制人物
+void drawMan(SDL_Renderer *renderer,int x,int y,int judge){
+    SDL_Rect Head = {x-20,y-40,40,40};
+    SDL_Rect Body = {x-30,y,60,80};
+    SDL_Rect Hat1 = {x-25,y-50,50,15};
+    SDL_Rect Hat2 = {x-15,y-60,30,20};
+    SDL_Rect LeftArm = {x-50,y+10,20,50};
+    SDL_Rect RightArm = {x+30,y+10,20,50};
+    
+    // 身体
+    SDL_SetRenderDrawColor(renderer, 200, 100, 50, 255);
+    SDL_RenderFillRect(renderer, &Body);
+    // 头部
+    SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
+    SDL_RenderFillRect(renderer, &Head);
+    // 手臂
+    SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
+    SDL_RenderFillRect(renderer, &LeftArm);
+    SDL_RenderFillRect(renderer, &RightArm);
+    if(judge==1){
+        // 帽子
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderFillRect(renderer, &Hat1);
+        SDL_RenderFillRect(renderer, &Hat2);
+    }
+}
+
+//游戏界面
 void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int mouseX, int mouseY) {
     // 清空屏幕
     SDL_SetRenderDrawColor(renderer, 255, 245, 230, 255);
@@ -432,69 +448,26 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     renderText(renderer, font, "库存", 140, 130, inventoryTextColor);
     
     // 渲染库存项目
-    char inventoryText[100];
-    
-    sprintf(inventoryText, "面饼: %d/%d", gameData->inventory[INGREDIENT_BREAD], gameData->maxInventory[INGREDIENT_BREAD]);
-    renderText(renderer, font, inventoryText, 70, 160, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "肉: %d/%d", gameData->inventory[INGREDIENT_MEAT], gameData->maxInventory[INGREDIENT_MEAT]);
-    renderText(renderer, font, inventoryText, 70, 190, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "黄瓜: %d/%d", gameData->inventory[INGREDIENT_CUCUMBER], gameData->maxInventory[INGREDIENT_CUCUMBER]);
-    renderText(renderer, font, inventoryText, 70, 220, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "沙司: %d/%d", gameData->inventory[INGREDIENT_SAUCE], gameData->maxInventory[INGREDIENT_SAUCE]);
-    renderText(renderer, font, inventoryText, 70, 250, (SDL_Color){0, 0, 0, 255});
+    renderInventoryItem(renderer, font, "面饼", gameData->inventory[INGREDIENT_BREAD], gameData->maxInventory[INGREDIENT_BREAD], 70, 160);
+    renderInventoryItem(renderer, font, "肉", gameData->inventory[INGREDIENT_MEAT], gameData->maxInventory[INGREDIENT_MEAT], 70, 190);
+    renderInventoryItem(renderer, font, "黄瓜", gameData->inventory[INGREDIENT_CUCUMBER], gameData->maxInventory[INGREDIENT_CUCUMBER], 70, 220);
+    renderInventoryItem(renderer, font, "沙司", gameData->inventory[INGREDIENT_SAUCE], gameData->maxInventory[INGREDIENT_SAUCE], 70, 250);
     
     // 渲染升级按钮
     bool upgradeButtonHover = mouseX >= 950 && mouseX <= 1050 && mouseY >= 60 && mouseY <= 100;
     renderButton(renderer, font, "升级店铺", 950, 60, 100, 40, upgradeButtonHover);
     
-    sprintf(inventoryText, "薯条: %d/%d", gameData->inventory[INGREDIENT_FRIES], gameData->maxInventory[INGREDIENT_FRIES]);
-    renderText(renderer, font, inventoryText, 70, 280, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "番茄酱: %d/%d", gameData->inventory[INGREDIENT_KETCHUP], gameData->maxInventory[INGREDIENT_KETCHUP]);
-    renderText(renderer, font, inventoryText, 70, 310, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "可乐: %d/%d", gameData->inventory[INGREDIENT_COKE], gameData->maxInventory[INGREDIENT_COKE]);
-    renderText(renderer, font, inventoryText, 70, 340, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "包装纸: %d/%d", gameData->inventory[INGREDIENT_WRAPPER], gameData->maxInventory[INGREDIENT_WRAPPER]);
-    renderText(renderer, font, inventoryText, 70, 370, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "薯条盒: %d/%d", gameData->inventory[INGREDIENT_FRY_BOX], gameData->maxInventory[INGREDIENT_FRY_BOX]);
-    renderText(renderer, font, inventoryText, 70, 400, (SDL_Color){0, 0, 0, 255});
-    
-    sprintf(inventoryText, "可乐杯: %d/%d", gameData->inventory[INGREDIENT_COKE_CUP], gameData->maxInventory[INGREDIENT_COKE_CUP]);
-    renderText(renderer, font, inventoryText, 70, 430, (SDL_Color){0, 0, 0, 255});
+    renderInventoryItem(renderer, font, "薯条", gameData->inventory[INGREDIENT_FRIES], gameData->maxInventory[INGREDIENT_FRIES], 70, 280);
+    renderInventoryItem(renderer, font, "番茄酱", gameData->inventory[INGREDIENT_KETCHUP], gameData->maxInventory[INGREDIENT_KETCHUP], 70, 310);
+    renderInventoryItem(renderer, font, "可乐", gameData->inventory[INGREDIENT_COKE], gameData->maxInventory[INGREDIENT_COKE], 70, 340);
+    renderInventoryItem(renderer, font, "包装纸", gameData->inventory[INGREDIENT_WRAPPER], gameData->maxInventory[INGREDIENT_WRAPPER], 70, 370);
+    renderInventoryItem(renderer, font, "薯条盒", gameData->inventory[INGREDIENT_FRY_BOX], gameData->maxInventory[INGREDIENT_FRY_BOX], 70, 400);
+    renderInventoryItem(renderer, font, "可乐杯", gameData->inventory[INGREDIENT_COKE_CUP], gameData->maxInventory[INGREDIENT_COKE_CUP], 70, 430);
     
     // 渲染厨师形象
     int chefX = 100;
     int chefY = 480;
-    
-    // 厨师身体
-    SDL_SetRenderDrawColor(renderer, 200, 100, 50, 255);
-    SDL_Rect chefBody = {chefX - 30, chefY, 60, 80};
-    SDL_RenderFillRect(renderer, &chefBody);
-    
-    // 厨师头部
-    SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
-    SDL_Rect chefHead = {chefX - 20, chefY - 40, 40, 40};
-    SDL_RenderFillRect(renderer, &chefHead);
-    
-    // 厨师帽子
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_Rect chefHat1 = {chefX - 25, chefY - 50, 50, 15};
-    SDL_RenderFillRect(renderer, &chefHat1);
-    SDL_Rect chefHat2 = {chefX - 15, chefY - 60, 30, 20};
-    SDL_RenderFillRect(renderer, &chefHat2);
-    
-    // 厨师手臂
-    SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
-    SDL_Rect chefLeftArm = {chefX - 50, chefY + 10, 20, 50};
-    SDL_RenderFillRect(renderer, &chefLeftArm);
-    SDL_Rect chefRightArm = {chefX + 30, chefY + 10, 20, 50};
-    SDL_RenderFillRect(renderer, &chefRightArm);
+    drawMan(renderer,chefX,chefY,1);
     
     // 渲染顾客区域
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
@@ -511,11 +484,9 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
         int y = 160;
         
         // 顾客背景 - 根据顾客类型设置不同颜色
-        if (customer->type == CUSTOMER_TYPE_BEGGAR) {
-            SDL_SetRenderDrawColor(renderer, 200, 150, 150, 255); // 乞丐背景为红色调
-        } else {
-            SDL_SetRenderDrawColor(renderer, 150, 180, 200, 255); // 普通顾客背景为蓝色调
-        }
+        SDL_SetRenderDrawColor(renderer, customer->type == CUSTOMER_TYPE_BEGGAR ? 200 : 150, 
+                               customer->type == CUSTOMER_TYPE_BEGGAR ? 150 : 180, 
+                               customer->type == CUSTOMER_TYPE_BEGGAR ? 150 : 200, 255);
         SDL_Rect customerRect = {x, y, 160, 140};
         SDL_RenderFillRect(renderer, &customerRect);
         
@@ -526,19 +497,17 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
         SDL_RenderFillRect(renderer, &customerHead);
         
         // 顾客身体
-        if (customer->type == CUSTOMER_TYPE_BEGGAR) {
-            SDL_SetRenderDrawColor(renderer, 100, 50, 50, 255); // 乞丐穿着深色衣服
-        } else {
-            SDL_SetRenderDrawColor(renderer, 50, 100, 150, 255); // 普通顾客穿着蓝色衣服
-        }
+        SDL_SetRenderDrawColor(renderer, customer->type == CUSTOMER_TYPE_BEGGAR ? 100 : 50, 
+                               customer->type == CUSTOMER_TYPE_BEGGAR ? 50 : 100, 
+                               customer->type == CUSTOMER_TYPE_BEGGAR ? 50 : 150, 255);
         SDL_Rect customerBody = {x + 50, y + 50, 60, 60};
         SDL_RenderFillRect(renderer, &customerBody);
         
         // 顾客手臂
         SDL_SetRenderDrawColor(renderer, 255, 220, 180, 255);
         SDL_Rect customerLeftArm = {x + 30, y + 60, 20, 40};
-        SDL_RenderFillRect(renderer, &customerLeftArm);
         SDL_Rect customerRightArm = {x + 110, y + 60, 20, 40};
+        SDL_RenderFillRect(renderer, &customerLeftArm);
         SDL_RenderFillRect(renderer, &customerRightArm);
         
         // 渲染顾客类型标识
@@ -548,16 +517,9 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
         
         // 渲染顾客需求
         char customerText[50] = "";
-        if (customer->needsShawarma) {
-            strcat(customerText, "卷饼 ");
-        }
-        if (customer->needsFries) {
-            strcat(customerText, "薯条 ");
-        }
-        if (customer->needsCoke) {
-            strcat(customerText, "可乐");
-        }
-        
+        if (customer->needsShawarma) strcat(customerText, "卷饼 ");
+        if (customer->needsFries) strcat(customerText, "薯条 ");
+        if (customer->needsCoke) strcat(customerText, "可乐");
         renderText(renderer, font, customerText, x + 10, y + 120, (SDL_Color){0, 0, 0, 255});
         
         // 渲染卷饼具体配料需求
@@ -605,15 +567,14 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     SDL_Color craftingTextColor = {0, 0, 0, 255};
     renderText(renderer, font, "制作区域", 580, 350, craftingTextColor);
     
-    // 渲染当前制作的餐品 - 使用原材料形象而不是文字
+    // 渲染当前制作的餐品
     int shawarmaX = 290;
-    int shawarmaY = 390; // 增加Y坐标，为放大的图形提供更多空间
-    int itemSize = 60; // 增加项目间距，使食物排列更分散
+    int shawarmaY = 390;
+    int itemSize = 60;
     
     // 渲染当前卷饼的重叠效果
-    // 从下到上绘制卷饼组件，实现重叠效果
     if (gameData->currentShawarma.hasBread) {
-        // 面包是卷饼的基础，先绘制
+        // 面包
         drawBread(renderer, shawarmaX + 90, shawarmaY - 10, false);
     }
     
@@ -673,33 +634,19 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
     SDL_Rect buttonsRect = {280, 480, 850, 190};
     SDL_RenderFillRect(renderer, &buttonsRect);
-    
-    // 渲染原材料和食物形象代替按钮
     int iconY = 510;
-    int iconWidth = 80; // 保持宽度以适应放大后的图标
-    int iconHeight = 45; // 保持高度以适应放大后的图标
-    int iconSpacing = 25; // 增加间距，使按钮排列更分散
-    
-    // 卷饼制作区域
-    // 放置面饼
+    int iconWidth = 80;
+    int iconHeight = 45;
+    int iconSpacing = 25;
     bool placeBreadHover = mouseX >= 290 && mouseX <= 290 + iconWidth && mouseY >= iconY && mouseY <= iconY + iconHeight;
     drawBread(renderer, 290, iconY, placeBreadHover);
-    
-    // 添加肉
     bool addMeatHover = mouseX >= 290 + iconWidth + iconSpacing && mouseX <= 290 + 2 * iconWidth + iconSpacing && mouseY >= iconY && mouseY <= iconY + iconHeight;
     drawMeat(renderer, 290 + iconWidth + iconSpacing, iconY, addMeatHover);
-    
-    // 添加黄瓜
     bool addCucumberHover = mouseX >= 290 + 2 * (iconWidth + iconSpacing) && mouseX <= 290 + 3 * iconWidth + 2 * iconSpacing && mouseY >= iconY && mouseY <= iconY + iconHeight;
     drawCucumber(renderer, 290 + 2 * (iconWidth + iconSpacing), iconY, addCucumberHover);
-    
-    // 添加沙司
     bool addSauceHover = mouseX >= 290 + 3 * (iconWidth + iconSpacing) && mouseX <= 290 + 4 * iconWidth + 3 * iconSpacing && mouseY >= iconY && mouseY <= iconY + iconHeight;
     drawSauce(renderer, 290 + 3 * (iconWidth + iconSpacing), iconY, addSauceHover);
-    
     iconY += iconHeight + iconSpacing;
-    
-    // 添加薯条
     bool addFriesHover = mouseX >= 290 && mouseX <= 290 + iconWidth && mouseY >= iconY && mouseY <= iconY + iconHeight;
     drawFries(renderer, 290, iconY, addFriesHover);
     
@@ -745,34 +692,40 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     bool deliverCokeHover = mouseX >= 290 + iconWidth + iconSpacing && mouseX <= 290 + 2 * iconWidth + iconSpacing && mouseY >= iconY && mouseY <= iconY + iconHeight;
     drawDeliverIcon(renderer, 290 + iconWidth + iconSpacing, iconY, deliverCokeHover);
     
-    // 渲染补货和预处理按钮（暂时保留文字按钮）
+    // 渲染补货和预处理按钮
     int buttonY = iconY;
     int buttonWidth = 120;
     int buttonHeight = 35;
     int buttonSpacing = 20;
     
-    bool restockHover = mouseX >= 290 + 2 * (iconWidth + iconSpacing) && mouseX <= 290 + 2 * (iconWidth + iconSpacing) + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
-    renderButton(renderer, font, "补货", 290 + 2 * (iconWidth + iconSpacing), buttonY, buttonWidth, buttonHeight, restockHover);
+    // 使用结构体数组简化按钮渲染
+    typedef struct {
+        int x;
+        int y;
+        const char* text;
+    } Button;
     
-    bool prepMeatHover = mouseX >= 290 + 2 * (iconWidth + iconSpacing) + buttonWidth + buttonSpacing && mouseX <= 290 + 2 * (iconWidth + iconSpacing) + 2 * buttonWidth + buttonSpacing && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
-    renderButton(renderer, font, "切肉", 290 + 2 * (iconWidth + iconSpacing) + buttonWidth + buttonSpacing, buttonY, buttonWidth, buttonHeight, prepMeatHover);
+    Button buttons[] = {
+        {290 + 2 * (iconWidth + iconSpacing), buttonY, "补货"},
+        {290 + 2 * (iconWidth + iconSpacing) + buttonWidth + buttonSpacing, buttonY, "切肉"},
+        {290, buttonY + buttonHeight + buttonSpacing, "切土豆"},
+        {290 + buttonWidth + buttonSpacing, buttonY + buttonHeight + buttonSpacing, "炸薯条"},
+        {290 + 2 * (buttonWidth + buttonSpacing), buttonY + buttonHeight + buttonSpacing, "丢弃"}
+    };
     
-    buttonY += buttonHeight + buttonSpacing;
+    int buttonCount = sizeof(buttons) / sizeof(buttons[0]);
     
-    bool prepPotatoHover = mouseX >= 290 && mouseX <= 290 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
-    renderButton(renderer, font, "切土豆", 290, buttonY, buttonWidth, buttonHeight, prepPotatoHover);
+    for (int i = 0; i < buttonCount; i++) {
+        Button btn = buttons[i];
+        bool hover = mouseX >= btn.x && mouseX <= btn.x + buttonWidth && mouseY >= btn.y && mouseY <= btn.y + buttonHeight;
+        renderButton(renderer, font, btn.text, btn.x, btn.y, buttonWidth, buttonHeight, hover);
+    }
     
-    bool fryPotatoHover = mouseX >= 290 + buttonWidth + buttonSpacing && mouseX <= 290 + 2 * buttonWidth + buttonSpacing && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
-    renderButton(renderer, font, "炸薯条", 290 + buttonWidth + buttonSpacing, buttonY, buttonWidth, buttonHeight, fryPotatoHover);
-    
-    bool discardHover = mouseX >= 290 + 2 * (buttonWidth + buttonSpacing) && mouseX <= 290 + 3 * buttonWidth + 2 * buttonSpacing && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
-    renderButton(renderer, font, "丢弃", 290 + 2 * (buttonWidth + buttonSpacing), buttonY, buttonWidth, buttonHeight, discardHover);
-    
-    // 渲染烹饪进度条
+    //烹饪进度条
     buttonY += buttonHeight + buttonSpacing;
     
     if (gameData->currentCookingState != COOKING_STATE_IDLE) {
-        // 根据当前烹饪状态设置文本
+        //烹饪状态文本
         const char* cookingText;
         switch (gameData->currentCookingState) {
             case COOKING_STATE_PREP_MEAT:
@@ -789,19 +742,12 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
                 break;
         }
         
-        // 渲染烹饪状态文本
+        //烹饪状态文本
         renderText(renderer, font, cookingText, 290, buttonY, (SDL_Color){255, 255, 255, 255});
         
-        // 渲染进度条背景
+        // 渲染进度条
         buttonY += 30;
-        SDL_Rect progressBarBg = {290, buttonY, 4 * buttonWidth + 3 * buttonSpacing, 20};
-        SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
-        SDL_RenderFillRect(renderer, &progressBarBg);
-        
-        // 渲染进度条填充
-        SDL_Rect progressBarFill = {290, buttonY, (4 * buttonWidth + 3 * buttonSpacing) * gameData->cookingProgress / 100, 20};
-        SDL_SetRenderDrawColor(renderer, 0, 200, 0, 255);
-        SDL_RenderFillRect(renderer, &progressBarFill);
+        renderProgressBar(renderer, 290, buttonY, 4 * buttonWidth + 3 * buttonSpacing, 20, gameData->cookingProgress);
         
         // 渲染进度百分比文本
         char progressText[20];
@@ -811,15 +757,7 @@ void renderGame(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int 
     }
 }
 
-/**
- * @brief 渲染游戏结束界面
- * 
- * @param renderer SDL渲染器指针
- * @param font 字体指针
- * @param gameData 游戏数据指针
- * @param mouseX 鼠标X坐标
- * @param mouseY 鼠标Y坐标
- */
+//游戏结束界面
 void renderGameOver(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, int mouseX, int mouseY) {
     // 设置背景色并清空屏幕
     SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
@@ -841,34 +779,22 @@ void renderGameOver(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, 
     renderButton(renderer, font, "继续", 350, 400, 300, 50, continueButtonHover);
 }
 
-/**
- * @brief 渲染升级界面
- * 
- * @param renderer SDL渲染器指针
- * @param font 字体指针
- * @param gameData 游戏数据指针
- * @param upgradeData 升级数据指针
- * @param mouseX 鼠标X坐标
- * @param mouseY 鼠标Y坐标
- */
+//渲染升级界面
 void renderUpgradeMenu(SDL_Renderer* renderer, TTF_Font* font, GameData* gameData, UpgradeData* upgradeData, int mouseX, int mouseY) {
     // 设置背景色并清空屏幕
     SDL_SetRenderDrawColor(renderer, 50, 50, 50, 255);
     SDL_RenderClear(renderer);
-    
     // 渲染标题和金币信息
     renderText(renderer, font, "店铺升级", 320, 100, (SDL_Color){255, 255, 255, 255});
     
     char goldText[100];
     sprintf(goldText, "当前金币: %d", gameData->gold);
     renderText(renderer, font, goldText, 330, 150, (SDL_Color){255, 255, 255, 255});
-    
     // 设置按钮参数
     int buttonY = 200;
     int buttonWidth = 400;
     int buttonHeight = 60;
     int buttonSpacing = 20;
-    
     // 自动切肉机升级按钮
     bool autoMeatPrepHover = mouseX >= 200 && mouseX <= 200 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
     char autoMeatPrepText[100];
@@ -878,9 +804,7 @@ void renderUpgradeMenu(SDL_Renderer* renderer, TTF_Font* font, GameData* gameDat
         strcpy(autoMeatPrepText, "自动切肉机 - 50 金币");
     }
     renderButton(renderer, font, autoMeatPrepText, 200, buttonY, buttonWidth, buttonHeight, autoMeatPrepHover);
-    
     buttonY += buttonHeight + buttonSpacing;
-    
     // 金盘子升级按钮
     bool goldPlateHover = mouseX >= 200 && mouseX <= 200 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
     char goldPlateText[100];
@@ -890,17 +814,13 @@ void renderUpgradeMenu(SDL_Renderer* renderer, TTF_Font* font, GameData* gameDat
         strcpy(goldPlateText, "金盘子 - 100 金币");
     }
     renderButton(renderer, font, goldPlateText, 200, buttonY, buttonWidth, buttonHeight, goldPlateHover);
-    
     buttonY += buttonHeight + buttonSpacing;
-    
     // 扩充店面前往升级按钮
     bool expandShopHover = mouseX >= 200 && mouseX <= 200 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
     char expandShopText[100];
     sprintf(expandShopText, "扩充店面 - %d 金币", (gameData->maxCustomers - MAX_CUSTOMERS) * 100 + 150);
     renderButton(renderer, font, expandShopText, 200, buttonY, buttonWidth, buttonHeight, expandShopHover);
-    
     buttonY += buttonHeight + buttonSpacing;
-    
     // 返回按钮
     bool backButtonHover = mouseX >= 200 && mouseX <= 200 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight;
     renderButton(renderer, font, "返回", 200, buttonY, buttonWidth, buttonHeight, backButtonHover);

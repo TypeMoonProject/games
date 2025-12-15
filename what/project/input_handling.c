@@ -3,10 +3,6 @@
 #include "src/include/my/game_logic.h"
 
 // 处理菜单鼠标点击
-// @param gameData 游戏数据结构体指针
-// @param mouseX 鼠标X坐标
-// @param mouseY 鼠标Y坐标
-// @param upgradeData 升级数据结构体指针
 void handleMenuClick(GameData* gameData, int mouseX, int mouseY, UpgradeData* upgradeData) {
     // 开始新的一天按钮
     if (mouseX >= 350 && mouseX <= 650 && mouseY >= 320 && mouseY <= 370) {
@@ -23,49 +19,38 @@ void handleMenuClick(GameData* gameData, int mouseX, int mouseY, UpgradeData* up
         gameData->currentShawarma.hasFries = false;
         gameData->currentShawarma.hasKetchup = false;
         gameData->currentShawarma.isWrapped = false;
-        gameData->currentShawarma.isDelivered = false;
-        
+        gameData->currentShawarma.isDelivered = false;   
         gameData->currentFries.hasBox = false;
         gameData->currentFries.hasFries = false;
         gameData->currentFries.isDelivered = false;
-        
         gameData->currentCoke.hasCup = false;
         gameData->currentCoke.hasCoke = false;
         gameData->currentCoke.isDelivered = false;
     }
     // 升级店铺按钮
     else if (mouseX >= 350 && mouseX <= 650 && mouseY >= 400 && mouseY <= 450) {
-        // 进入升级界面
         upgradeData->state = UPGRADE_STATE_MAIN;
-        // 这里可以添加升级界面的状态切换逻辑
-        // 为了简化，我们直接在这里处理升级购买
         int buttonWidth = 400;
         int buttonHeight = 60;
         int buttonSpacing = 20;
         int buttonY = 200;
-        
         // 自动切肉机升级
         if (!gameData->autoMeatPrep && mouseX >= 200 && mouseX <= 200 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
             if (gameData->gold >= 50) {
                 gameData->gold -= 50;
                 gameData->autoMeatPrep = true;
-                // 立即应用自动切肉效果
                 gameData->inventory[INGREDIENT_MEAT] = gameData->maxInventory[INGREDIENT_MEAT];
             }
         }
         
         buttonY += buttonHeight + buttonSpacing;
-        
         // 金盘子升级
         if (!gameData->goldPlate && mouseX >= 200 && mouseX <= 200 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
             if (gameData->gold >= 100) {
                 gameData->gold -= 100;
                 gameData->goldPlate = true;
             }
-        }
-        
-        buttonY += buttonHeight + buttonSpacing;
-        
+        }buttonY += buttonHeight + buttonSpacing;
         // 扩充店面前往升级
         if (mouseX >= 200 && mouseX <= 200 + buttonWidth && mouseY >= buttonY && mouseY <= buttonY + buttonHeight) {
             int cost = (gameData->maxCustomers - MAX_CUSTOMERS) * 100 + 150;
@@ -78,10 +63,6 @@ void handleMenuClick(GameData* gameData, int mouseX, int mouseY, UpgradeData* up
 }
 
 // 处理升级菜单鼠标点击
-// @param gameData 游戏数据结构体指针
-// @param mouseX 鼠标X坐标
-// @param mouseY 鼠标Y坐标
-// @param upgradeData 升级数据结构体指针
 void handleUpgradeMenuClick(GameData* gameData, int mouseX, int mouseY, UpgradeData* upgradeData) {
     int buttonWidth = 400;
     int buttonHeight = 60;
@@ -128,17 +109,14 @@ void handleUpgradeMenuClick(GameData* gameData, int mouseX, int mouseY, UpgradeD
 }
 
 // 处理游戏鼠标点击
-// @param gameData 游戏数据结构体指针
-// @param mouseX 鼠标X坐标
-// @param mouseY 鼠标Y坐标
 void handleGameClick(GameData* gameData, int mouseX, int mouseY) {
     int iconWidth = 80;
     int iconHeight = 45;
-    int iconSpacing = 25; // 增加间距，与渲染布局保持一致
+    int iconSpacing = 25; 
     int buttonWidth = 120;
     int buttonHeight = 35;
     int buttonSpacing = 20;
-    int iconY = 510; // 调整Y坐标，与渲染布局保持一致
+    int iconY = 510;
     
     // 点击升级按钮
     if (mouseX >= 950 && mouseX <= 1050 && mouseY >= 60 && mouseY <= 100) {
@@ -389,9 +367,6 @@ void handleGameClick(GameData* gameData, int mouseX, int mouseY) {
 }
 
 // 处理游戏结束界面点击
-// @param gameData 游戏数据结构体指针
-// @param mouseX 鼠标X坐标
-// @param mouseY 鼠标Y坐标
 void handleGameOverClick(GameData* gameData, int mouseX, int mouseY) {
     // 返回菜单按钮
     if (mouseX >= 350 && mouseX <= 650 && mouseY >= 400 && mouseY <= 450) {
